@@ -41,6 +41,7 @@ export interface Enrollment {
     rejectionReason?: string;
     rejectionReasonName?: string;
     observation?: string;
+    dniTramite?: string;
     customField1?: string | null;
     customField2?: string | null;
     customField3?: string | null;

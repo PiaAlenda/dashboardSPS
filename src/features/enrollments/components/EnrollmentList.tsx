@@ -64,7 +64,16 @@ export const EnrollmentList = ({
                     <div className="flex items-center justify-between mb-8 pb-6 border-b-2 border-slate-50">
                         <div className="flex flex-col gap-1">
                             <span className="text-[9px] font-black text-slate-300 uppercase tracking-[0.2em]">Identificación</span>
-                            <span className="text-xs font-black text-slate-700 tracking-tight">DNI {e.dni}</span>
+                            <div className="flex flex-col">
+                                <span className="text-xs font-black text-slate-700 tracking-tight">DNI {e.dni}</span>
+                                {e.dniTramite ? (
+                                    <span className="text-xs font-black text-slate-700 tracking-tight">
+                                        TRÁMITE: {e.dniTramite}
+                                    </span>
+                                ) : (
+                                    <span className="text-[9px] font-bold text-slate-300 italic">Sin n° de trámite</span>
+                                )}
+                            </div>
                         </div>
                         <div className="flex flex-col items-end gap-1">
                             <span className="text-[9px] font-black text-slate-300 uppercase tracking-[0.2em]">Categoría</span>

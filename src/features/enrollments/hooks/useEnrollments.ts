@@ -46,20 +46,24 @@ export const useEnrollments = () => {
         const list: Enrollment[] = Array.isArray(rawData) ? rawData : (rawData.data || []);
 
         return list.map(e => {
-            // Prioridad 1: Motivo directo que viene de la API
-            if (e.rejectionReason && !e.rejectionReasonName) {
-                return { ...e, rejectionReasonName: e.rejectionReason };
-            }
+            // Normalización de DNI Trámite (por si viene snake_case, tramite, o customField1)
+            const dTramite = e.dniTramite || (e as any).dni_tramite || (e as any).tramite || (e as any).numero_tramite || e.customField1 || (e as any).custom_field1;
 
-            // Prioridad 2: Normalización por ID
-            if (e.status?.toUpperCase() === 'RECHAZADO' && !e.rejectionReasonName) {
+            let rejectionReasonName = e.rejectionReasonName || e.rejectionReason;
+
+            if (e.status?.toUpperCase() === 'RECHAZADO' && !rejectionReasonName) {
                 const rId = e.rejectionReasonId || (e as any).rejection_reason_id;
                 if (rId) {
                     const reason = rejectionReasons.find(r => r.id == rId);
-                    if (reason) return { ...e, rejectionReasonName: reason.name };
+                    if (reason) rejectionReasonName = reason.name;
                 }
             }
-            return e;
+
+            return {
+                ...e,
+                rejectionReasonName: rejectionReasonName || undefined,
+                dniTramite: dTramite
+            };
         });
     }, [rawData, rejectionReasons]);
 

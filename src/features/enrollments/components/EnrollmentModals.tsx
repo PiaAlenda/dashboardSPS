@@ -134,7 +134,14 @@ const DetailModal = ({ isOpen, onClose, enrollment, activeTab, setActiveTab, his
                             <h2 className="text-2xl font-black text-slate-800 uppercase tracking-tight">{enrollment.firstName} {enrollment.lastName}</h2>
                             <div className="flex items-center gap-3 mt-1.5">
                                 <StatusBadgeUI status={enrollment.status} />
-                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2 py-1 bg-slate-100 rounded-lg">DNI: {enrollment.dni}</span>
+                                <div className="flex flex-col gap-1">
+                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2 py-1 bg-slate-100 rounded-lg">DNI: {enrollment.dni}</span>
+                                    {enrollment.dniTramite ? (
+                                        <span className="text-[10px] font-black text-[#ff8200] uppercase tracking-widest px-2 py-1 bg-orange-50 rounded-lg border border-orange-200">Tram: {enrollment.dniTramite}</span>
+                                    ) : (
+                                        <span className="text-[9px] font-bold text-slate-300 italic px-2">Sin trámite cargado</span>
+                                    )}
+                                </div>
                             </div>
                         </div>
                     </div>

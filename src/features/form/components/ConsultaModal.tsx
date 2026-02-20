@@ -8,7 +8,6 @@ interface ConsultaModalProps {
     isOpen: boolean;
     onClose: () => void;
 }
-// ... (imports permanecen igual)
 
 const ConsultaModal: React.FC<ConsultaModalProps> = ({ isOpen, onClose }) => {
     const [dni, setDni] = useState('');
@@ -67,8 +66,6 @@ const ConsultaModal: React.FC<ConsultaModalProps> = ({ isOpen, onClose }) => {
     return (
         <div className="modal-bg fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0, 0, 0, 0.7)', backdropFilter: 'blur(4px)' }}>
             <div className="bg-white rounded-[32px] w-full max-w-lg overflow-hidden shadow-2xl animate-fade-in border border-slate-100">
-
-                {/* Header idéntico al anterior */}
                 <div className="bg-slate-900 text-white p-6 flex justify-between items-center relative overflow-hidden">
                     <div className="absolute top-0 right-0 w-32 h-32 bg-[#ff8200] opacity-10 blur-3xl -mr-16 -mt-16" />
                     <div className="relative z-10 flex items-center gap-3">
@@ -86,15 +83,13 @@ const ConsultaModal: React.FC<ConsultaModalProps> = ({ isOpen, onClose }) => {
                     </div>
 
                     <div className="space-y-8">
-                        {/* Campo DNI */}
                         <div className="relative">
                             <CustomInput
                                 label="DNI"
-                                placeholder=" " // IMPORTANTE: Un espacio para activar el efecto flotante
+                                placeholder=" "
                                 icon={<Hash size={16} />}
                                 value={dni}
                                 onChange={(e) => handleNumberChange(e.target.value, 8, setDni)}
-                                // Pasamos el estado de error al componente
                                 error={error?.field === 'dni'}
                                 className={error?.field === 'dni' ? 'border-red-500' : ''}
                             />
@@ -106,7 +101,6 @@ const ConsultaModal: React.FC<ConsultaModalProps> = ({ isOpen, onClose }) => {
                             )}
                         </div>
 
-                        {/* Campo Trámite */}
                         <div className="relative">
                             <CustomInput
                                 label="N° de trámite del DNI"
@@ -114,6 +108,8 @@ const ConsultaModal: React.FC<ConsultaModalProps> = ({ isOpen, onClose }) => {
                                 icon={<Hash size={16} />}
                                 value={tramite}
                                 onChange={(e) => handleNumberChange(e.target.value, 11, setTramite)}
+                                onPaste={(e) => e.preventDefault()}
+                                onCopy={(e) => e.preventDefault()}
                                 error={error?.field === 'tramite'}
                                 className={error?.field === 'tramite' ? 'border-red-500' : ''}
                             />

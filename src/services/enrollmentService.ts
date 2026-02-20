@@ -59,7 +59,7 @@ export const enrollmentService = {
         api.post('public/enrollment/food-ration', data).then(res => res.data),
 
     getStatus: (dni: string, tramite: string) =>
-        api.get('/public/enrollments/status', {
+        api.post('/public/enrollments/status', {
             params: { dni, dniTramite: tramite }
         }).then(res => res.data),
 };

@@ -92,6 +92,13 @@ export const EnrollmentInfo = ({ enrollment, onManageStatus, onReject, onDelete 
                 {/* Grilla de Datos Técnicos */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                     <div className="p-4 bg-white border border-slate-100 rounded-2xl shadow-sm">
+                        <p className="text-[9px] font-black uppercase text-slate-400 mb-0.5 tracking-wider">Identificación</p>
+                        <p className="text-xs font-bold text-slate-700">DNI: {enrollment.dni}</p>
+                        {enrollment.dniTramite && (
+                            <p className="text-xs font-bold text-slate-700">TRÁMITE: {enrollment.dniTramite}</p>
+                        )}
+                    </div>
+                    <div className="p-4 bg-white border border-slate-100 rounded-2xl shadow-sm">
                         <p className="text-[9px] font-black uppercase text-slate-400 mb-0.5 tracking-wider">Tipo de Beneficiario</p>
                         <p className="text-xs font-bold text-slate-700">{enrollment.beneficiaryType || '---'}</p>
                     </div>

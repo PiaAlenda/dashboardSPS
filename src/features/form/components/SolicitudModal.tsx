@@ -12,7 +12,6 @@ interface SolicitudModalProps {
     onFinish: () => void;
 }
 
-// --- SUB-COMPONENTE: INPUT ---
 const FloatingInput = ({ label, icon: Icon, value, onChange, type = "text", error, maxLength }: any) => {
     const hasValue = value !== undefined && value !== null && value.toString().length > 0;
 
@@ -26,6 +25,8 @@ const FloatingInput = ({ label, icon: Icon, value, onChange, type = "text", erro
                 type={type}
                 value={value}
                 onChange={onChange}
+                onPaste={(e) => { if (label.toLowerCase().includes('trámite')) e.preventDefault(); }}
+                onCopy={(e) => { if (label.toLowerCase().includes('trámite')) e.preventDefault(); }}
                 maxLength={maxLength}
                 placeholder=" "
                 className={`peer w-full bg-slate-50 border-2 ${error ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-[#ff8200]'} 
@@ -44,24 +45,25 @@ const FloatingInput = ({ label, icon: Icon, value, onChange, type = "text", erro
     );
 };
 
-// --- SUB-COMPONENTE: SELECT (CORREGIDO SOLAPAMIENTO) ---
 const FloatingSelect = ({ label, icon: Icon, value, onChange, options, error, loading = false }: any) => {
     const hasValue = value !== "" && value !== 0 && value !== undefined;
 
     return (
         <div className="relative w-full group">
             <div className={`absolute left-4 top-[26px] -translate-y-1/2 z-10 text-slate-400 pointer-events-none group-focus-within:text-[#ff8200]`}>
-                {Icon}
+                {loading ? <Loader2 size={18} className="animate-spin" /> : Icon}
             </div>
             <select
                 value={value}
                 onChange={onChange}
                 className={`peer w-full bg-slate-50 border-2 ${error ? 'border-red-200' : 'border-slate-100 focus:border-[#ff8200]'} 
-                rounded-2xl pl-12 pr-10 pt-6 pb-2 text-sm font-bold outline-none transition-all appearance-none cursor-pointer`}
+                rounded-2xl pl-12 pr-10 pt-6 pb-2 text-sm font-bold outline-none transition-all appearance-none cursor-pointer text-slate-700`}
             >
                 <option value="" hidden></option>
                 {!loading && options.map((opt: any) => (
-                    <option key={opt.id || opt.value} value={opt.id || opt.value}>{opt.name || opt.label}</option>
+                    <option key={opt.id || opt.value} value={opt.id || opt.value} className="text-slate-700">
+                        {opt.name || opt.label}
+                    </option>
                 ))}
             </select>
             <label className={`absolute left-12 transition-all pointer-events-none
@@ -85,7 +87,8 @@ const SolicitudModal: React.FC<SolicitudModalProps> = ({ isOpen, onClose, onFini
         schoolId: 0, schoolNameOther: '', courseGrade: '', courseDivision: '', shiftId: 0
     });
 
-    // Opciones para Grado (1-6)
+    const [divisionType, setDivisionType] = useState<'letter' | 'number'>('letter');
+
     const gradeOptions = [
         { value: '1', label: '1° Año/Grado' },
         { value: '2', label: '2° Año/Grado' },
@@ -95,25 +98,17 @@ const SolicitudModal: React.FC<SolicitudModalProps> = ({ isOpen, onClose, onFini
         { value: '6', label: '6° Año/Grado' },
     ];
 
-    // Opciones para División (A/1 - I/9)
-    const divisionOptions = [
-        { value: 'A', label: 'A / 1' },
-        { value: 'B', label: 'B / 2' },
-        { value: 'C', label: 'C / 3' },
-        { value: 'D', label: 'D / 4' },
-        { value: 'E', label: 'E / 5' },
-        { value: 'F', label: 'F / 6' },
-        { value: 'G', label: 'G / 7' },
-        { value: 'H', label: 'H / 8' },
-        { value: 'I', label: 'I / 9' },
-    ];
+    const divisionOptions = useMemo(() => {
+        if (divisionType === 'letter') {
+            return ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I'].map(l => ({ value: l, label: l }));
+        }
+        return ['1', '2', '3', '4', '5', '6', '7', '8', '9'].map(n => ({ value: n, label: n }));
+    }, [divisionType]);
 
     const [schoolSearch, setSchoolSearch] = useState('');
     const [showSchoolResults, setShowSchoolResults] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
-
-    // Captcha states
     const [captcha, setCaptcha] = useState({ a: 0, b: 0 });
     const [captchaAnswer, setCaptchaAnswer] = useState('');
 
@@ -174,13 +169,7 @@ const SolicitudModal: React.FC<SolicitudModalProps> = ({ isOpen, onClose, onFini
         if (form.educationLevelId === 0) e.educationLevelId = "Obligatorio";
         if (form.schoolId === 0 && !form.schoolNameOther.trim()) e.school = "Obligatorio";
         if (!form.courseDivision) e.courseDivision = "Seleccione";
-
-        // Validar Captcha
-        if (!captchaAnswer) {
-            e.captcha = "Respuesta incompleta";
-        } else if (Number(captchaAnswer) !== (captcha.a + captcha.b)) {
-            e.captcha = "Respuesta incorrecta";
-        }
+        if (!captchaAnswer || Number(captchaAnswer) !== (captcha.a + captcha.b)) e.captcha = "Incorrecto";
 
         setErrors(e);
         return Object.keys(e).length === 0;
@@ -205,7 +194,6 @@ const SolicitudModal: React.FC<SolicitudModalProps> = ({ isOpen, onClose, onFini
                 courseDivision: form.courseDivision,
                 shiftId: form.shiftId,
             };
-
             await enrollmentService.submitPublicFoodRation(payload);
             onFinish();
         } catch (error) {
@@ -232,7 +220,7 @@ const SolicitudModal: React.FC<SolicitudModalProps> = ({ isOpen, onClose, onFini
 
                 <div className="p-6 md:p-8 max-h-[80vh] overflow-y-auto space-y-6">
 
-                    {/* SECCIÓN 1: DATOS PERSONALES */}
+                    {/* DATOS PERSONALES */}
                     <section>
                         <div className="flex items-center gap-2 text-[#ff8200] mb-4">
                             <User size={18} className="stroke-[3px]" />
@@ -245,7 +233,7 @@ const SolicitudModal: React.FC<SolicitudModalProps> = ({ isOpen, onClose, onFini
                             <FloatingSelect
                                 label="Género" icon={<User size={18} />} value={form.genero}
                                 onChange={(e: any) => updateField('genero', e.target.value)}
-                                options={[{ value: 'Masculino', label: 'Masculino' }, { value: 'Femenino', label: 'Femenino' }, { value: 'Otro', label: 'Otro' }]}
+                                options={[{ value: 'Masculino', label: 'Masculino' }, { value: 'Femenino', label: 'Femenino' }, { value: 'No Binario', label: 'No Binario' }]}
                                 error={errors.genero}
                             />
                         </div>
@@ -255,21 +243,34 @@ const SolicitudModal: React.FC<SolicitudModalProps> = ({ isOpen, onClose, onFini
                         </div>
                     </section>
 
-                    {/* SECCIÓN 2: CONTACTO */}
+                    {/* SECCIÓN 2: CONTACTO Y UBICACIÓN */}
                     <section className="pt-4 border-t border-slate-100">
+                        <div className="flex items-center gap-2 text-[#ff8200] mb-4">
+                            <Mail size={18} className="stroke-[3px]" />
+                            <h3 className="font-black uppercase text-xs tracking-widest text-slate-700">Contacto y Residencia</h3>
+                        </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4">
-                            <FloatingInput label="Email" icon={<Mail size={18} />} value={form.email} onChange={(e: any) => updateField('email', e.target.value)} error={errors.email} />
-                            <div className="md:col-span-2">
-                                <FloatingSelect
-                                    label="Departamento de Residencia" icon={<Hash size={18} />}
-                                    value={form.departmentId} onChange={(e: any) => updateField('departmentId', Number(e.target.value))}
-                                    options={departments} loading={loadingDepts} error={errors.departmentId}
-                                />
-                            </div>
+                            <FloatingInput
+                                label="Email"
+                                icon={<Mail size={18} />}
+                                value={form.email}
+                                onChange={(e: any) => updateField('email', e.target.value)}
+                                error={errors.email}
+                            />
+
+                            <FloatingSelect
+                                label="Departamento"
+                                icon={<Hash size={18} />}
+                                value={form.departmentId}
+                                onChange={(e: any) => updateField('departmentId', Number(e.target.value))}
+                                options={departments}
+                                loading={loadingDepts}
+                                error={errors.departmentId}
+                            />
                         </div>
                     </section>
 
-                    {/* SECCIÓN 3: ESCUELA */}
+                    {/* ESCUELA */}
                     <section className="pt-4 border-t border-slate-100">
                         <div className="flex items-center gap-2 text-[#ff8200] mb-4">
                             <GraduationCap size={18} className="stroke-[3px]" />
@@ -283,8 +284,7 @@ const SolicitudModal: React.FC<SolicitudModalProps> = ({ isOpen, onClose, onFini
                                 options={educationLevels} error={errors.educationLevelId}
                             />
 
-                            {/* SELECTS PARA GRADO, DIVISION Y TURNO */}
-                            <div className="flex flex-col md:flex-row gap-4">
+                            <div className="flex flex-col md:flex-row gap-4 pt-2">
                                 <div className="flex-[2]">
                                     <FloatingSelect
                                         label="Grado / Año" icon={<BookOpen size={18} />}
@@ -294,7 +294,8 @@ const SolicitudModal: React.FC<SolicitudModalProps> = ({ isOpen, onClose, onFini
                                         error={errors.courseGrade}
                                     />
                                 </div>
-                                <div className="flex-[1.5]">
+
+                                <div className="flex-[1.5] relative">
                                     <FloatingSelect
                                         label="División" icon={<Hash size={18} />}
                                         value={form.courseDivision}
@@ -302,7 +303,25 @@ const SolicitudModal: React.FC<SolicitudModalProps> = ({ isOpen, onClose, onFini
                                         options={divisionOptions}
                                         error={errors.courseDivision}
                                     />
+
+                                    <div className="absolute right-3 -top-3 z-20 flex bg-white p-0.5 rounded-lg border border-slate-200 shadow-sm transition-all">
+                                        <button
+                                            type="button"
+                                            onClick={() => { setDivisionType('letter'); updateField('courseDivision', ''); }}
+                                            className={`px-2 py-0.5 rounded-md text-[9px] font-black transition-all ${divisionType === 'letter' ? 'bg-[#ff8200] text-white shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                                        >
+                                            A
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => { setDivisionType('number'); updateField('courseDivision', ''); }}
+                                            className={`px-2 py-0.5 rounded-md text-[9px] font-black transition-all ${divisionType === 'number' ? 'bg-[#ff8200] text-white shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                                        >
+                                            1
+                                        </button>
+                                    </div>
                                 </div>
+
                                 <div className="flex-[2]">
                                     <FloatingSelect
                                         label="Turno" icon={<Clock size={18} />}
@@ -315,14 +334,14 @@ const SolicitudModal: React.FC<SolicitudModalProps> = ({ isOpen, onClose, onFini
 
                         <div className="relative mt-4">
                             <FloatingInput
-                                label="Buscar Escuela (Escriba nombre)" icon={<Search size={18} />}
+                                label="Buscar Escuela (Escriba el nombre)" icon={<Search size={18} />}
                                 value={schoolSearch}
                                 onChange={(e: any) => { setSchoolSearch(e.target.value); setShowSchoolResults(true); if (form.schoolId !== 0) updateField('schoolId', 0); }}
                                 error={errors.school}
                             />
 
                             {showSchoolResults && schoolSearch.length > 2 && (
-                                <div className="absolute z-30 w-full mt-[-15px] bg-white border border-slate-200 rounded-2xl shadow-2xl max-h-48 overflow-y-auto p-2">
+                                <div className="absolute z-30 w-full mt-[-15px] bg-white border border-slate-200 rounded-2xl shadow-2xl max-h-48 overflow-y-auto p-2 animate-in fade-in zoom-in-95 duration-200">
                                     {filteredSchools.length > 0 ? (
                                         filteredSchools.map((s: any) => (
                                             <button key={s.id} type="button" onClick={() => { updateField('schoolId', s.id); setSchoolSearch(s.name); setShowSchoolResults(false); }} className="w-full text-left p-3 hover:bg-orange-50 rounded-xl flex items-center gap-3 transition-colors group">
@@ -349,7 +368,7 @@ const SolicitudModal: React.FC<SolicitudModalProps> = ({ isOpen, onClose, onFini
                     </section>
 
                     {/* CAPTCHA Y BOTÓN */}
-                    <div className="bg-orange-50 p-5 rounded-3xl border-2 border-orange-100 flex flex-col md:flex-row items-center gap-4">
+                    <div className="bg-orange-50 p-5 rounded-3xl border-2 border-orange-100 flex flex-col md:flex-row items-center gap-4 mt-4">
                         <div className="flex-1 text-center md:text-left">
                             <p className="text-[10px] font-black text-orange-400 uppercase tracking-widest">Seguridad</p>
                             <p className="text-lg font-black text-slate-700">¿Cuánto es <span className="text-[#ff8200]">{captcha.a} + {captcha.b}</span>?</p>
