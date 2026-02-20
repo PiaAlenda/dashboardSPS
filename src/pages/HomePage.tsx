@@ -12,7 +12,7 @@ export const HomePage: React.FC = () => {
         <div className="flex justify-center sm:justify-start">
           <img
             src="https://desarrollo.sanjuan.gob.ar/img/isologo-gob-sj-negativo.0446ce91.svg"
-            alt="Secretaría de Tránsito y Transporte"
+            alt="Secretaría de Promoción Social"
             className="h-10 md:h-16 object-contain"
           />
         </div>

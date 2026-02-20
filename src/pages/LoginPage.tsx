@@ -33,7 +33,7 @@ export const LoginPage = () => {
                         <div className="text-center space-y-10 2xl:space-y-16">
                             <img
                                 src="https://desarrollo.sanjuan.gob.ar/img/isologo-gob-sj-negativo.0446ce91.svg"
-                                alt="Secretaría de Tránsito y Transporte"
+                                alt="Secretaría de Promoción Social"
                                 className="h-14 2xl:h-24 mx-auto object-contain"
                             />
 
