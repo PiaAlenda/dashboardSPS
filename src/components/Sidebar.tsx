@@ -6,7 +6,6 @@ import {
     CreditCard,
     ChevronLeft,
     ChevronRight,
-    MessageSquare,
     BarChart3
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
