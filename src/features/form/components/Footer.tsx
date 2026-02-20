@@ -40,7 +40,7 @@ const Footer: React.FC = () => {
                     </div>
                     <div className="max-w-md">
                         <h4 className="font-black text-xl mb-4 tracking-tight leading-tight">
-                            Ministerio de Gobierno <br />
+                            Ministerio de Familia y Desarrollo Humano <br />
                             <span className="text-[#ff8200] font-bold text-base uppercase tracking-[0.15em]">
                                 Secretaría de Promoción Social
                             </span>

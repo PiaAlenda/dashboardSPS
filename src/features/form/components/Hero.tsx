@@ -34,7 +34,7 @@ const Hero: React.FC = () => {
                     <div className="w-full max-w-4xl shadow-xl rounded-[2.5rem] overflow-hidden bg-white mb-12">
                         <img
                             src="/text.webp"
-                            alt="Información del Ministerio de Gobierno"
+                            alt="Información del Ministerio de Familia y Desarrollo Humano"
                             className="w-full h-auto object-contain block"
                         />
                     </div>
