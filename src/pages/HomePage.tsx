@@ -38,7 +38,7 @@ export const HomePage: React.FC = () => {
           <div className="p-8 md:p-12 text-center space-y-6 md:space-y-8">
             <div className="space-y-4">
               <h1 className="text-2xl md:text-4xl font-black text-slate-900 tracking-tight leading-tight">
-                Sistema de Ministerio de Familia y Desarrollo Humano
+                Sistema de Secretaría de Promoción Social
               </h1>
 
               <div className="flex items-center justify-center gap-2 text-slate-400 font-medium">
@@ -49,7 +49,7 @@ export const HomePage: React.FC = () => {
 
             <div className="pt-4">
               <button
-                onClick={() => navigate('/4a12b69c3dcb/000c66e873233b66')}
+                onClick={() => navigate('/inscripcion-publica/4a12b6')}
                 className="group flex items-center justify-center gap-3 w-full sm:w-auto mx-auto rounded-2xl bg-[#ff8200] px-10 py-5 text-sm font-black uppercase tracking-widest text-white transition-all hover:bg-[#e67500] hover:shadow-xl hover:shadow-orange-200 active:scale-[0.98]"
               >
                 Ir al Formulario
@@ -65,7 +65,7 @@ export const HomePage: React.FC = () => {
         <div className="space-y-2">
           <p className="text-sm font-bold opacity-80 uppercase tracking-widest">Gobierno de San Juan</p>
           <p className="text-[10px] opacity-50 font-medium">
-            © {new Date().getFullYear()} Secretaría de Tránsito y Transporte - v1.0.0
+            © {new Date().getFullYear()} Secretaría de Promoción Social - v1.0.0
           </p>
         </div>
       </footer>

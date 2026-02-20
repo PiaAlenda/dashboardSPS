@@ -39,10 +39,6 @@ const FormPage: React.FC = () => {
             <ActionButtons
                 onOpenSolicitud={() => openModal('solicitud')}
                 onOpenConsulta={() => openModal('consulta')}
-                onOpenReclamo={() => {
-                    setMessageType('reclamo');
-                    openModal('message');
-                }}
             />
             <Footer />
 

@@ -15,13 +15,13 @@ export const LoginPage = () => {
                     <div className="relative z-10 flex flex-col">
                         <h2 className="text-white text-3xl 2xl:text-5xl font-black uppercase leading-[0.9] tracking-tighter">
                             Sistema de Gestión <br />
-                            <span className="text-[#ff8200]">Boleto Escolar <br />Docente</span>
+                            {/*<span className="text-[#ff8200]">Boleto Escolar <br />Docente</span>*/}
                         </h2>
-                        
+
                         <div className="h-1.5 w-16 bg-[#ff8200] mt-8 opacity-70" />
 
                         <p className="text-slate-400 text-lg 2xl:text-2xl font-medium leading-relaxed max-w-[280px] 2xl:max-w-[400px] mt-16 2xl:mt-24 border-l-4 border-slate-800 pl-6">
-                            Acceda a la plataforma administrativa de la Secretaría de Tránsito y Transporte.
+                            Acceda a la plataforma administrativa de la Secretaría de Promoción Social
                         </p>
                     </div>
                 </div>
@@ -52,8 +52,8 @@ export const LoginPage = () => {
                         </div>
                     </div>
 
-                    <footer className="p-8 2xl:p-12 border-t border-slate-50 text-center md:text-right">
-                        <p className="text-[10px] 2xl:text-xs font-black text-white uppercase tracking-[0.3em]">
+                    <footer className="p-8 2xl:p-12 border-t border-slate-50 flex justify-center items-center">
+                        <p className="text-[10px] 2xl:text-xs font-black text-white uppercase tracking-[0.3em] text-center">
                             Gobierno de San Juan • Sistema v1.2.0
                         </p>
                     </footer>

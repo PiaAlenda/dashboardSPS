@@ -49,6 +49,22 @@ export interface Enrollment {
     requestsFoodRation?: boolean;
 }
 
+export interface PublicEnrollmentRequest {
+    dni: string;
+    dniTramite: string;
+    gender: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    departmentId: number;
+    educationLevelId: number;
+    shiftId: number;
+    schoolId: number;
+    schoolNameOther?: string;
+    courseGrade: string;
+    courseDivision: string;
+}
+
 export interface AuthState {
     user: User | null;
     isAuthenticated: boolean;

@@ -1,7 +1,10 @@
-import React, { useState } from 'react';
-import { User, Mail, Phone, MapPin, Hash, GraduationCap, Clock, School, Check } from 'lucide-react';
-import { CustomInput } from '../../../components/ui/CustomInput';
+import React, { useState, useEffect, useMemo } from 'react';
+import { User, Mail, Hash, GraduationCap, School, Check, Loader2, X, Search, ChevronDown, BookOpen, Clock } from 'lucide-react';
 import { ActionButton } from '../../../components/ui/ActionButton';
+import { enrollmentService } from '../../../services/enrollmentService';
+import { masterDataService } from '../../../services/masterDataService';
+import { useQuery } from '@tanstack/react-query';
+import type { PublicEnrollmentRequest } from '../../../types';
 
 interface SolicitudModalProps {
     isOpen: boolean;
@@ -9,197 +12,361 @@ interface SolicitudModalProps {
     onFinish: () => void;
 }
 
+// --- SUB-COMPONENTE: INPUT ---
+const FloatingInput = ({ label, icon: Icon, value, onChange, type = "text", error, maxLength }: any) => {
+    const hasValue = value !== undefined && value !== null && value.toString().length > 0;
+
+    return (
+        <div className="relative w-full group">
+            <div className={`absolute left-4 top-[26px] -translate-y-1/2 z-10 transition-colors pointer-events-none
+                ${error ? 'text-red-500' : 'text-slate-400 group-focus-within:text-[#ff8200]'}`}>
+                {Icon}
+            </div>
+            <input
+                type={type}
+                value={value}
+                onChange={onChange}
+                maxLength={maxLength}
+                placeholder=" "
+                className={`peer w-full bg-slate-50 border-2 ${error ? 'border-red-200 focus:border-red-500' : 'border-slate-100 focus:border-[#ff8200]'} 
+                rounded-2xl pl-12 pr-4 pt-6 pb-2 text-sm font-bold outline-none transition-all focus:ring-4 focus:ring-orange-100/50`}
+            />
+            <label className={`absolute left-12 transition-all pointer-events-none
+                ${hasValue
+                    ? 'top-2 text-[10px] font-black uppercase tracking-widest text-[#ff8200]'
+                    : 'top-[18px] text-base text-slate-400 peer-focus:top-2 peer-focus:text-[10px] peer-focus:font-black peer-focus:uppercase peer-focus:tracking-widest peer-focus:text-[#ff8200]'}`}>
+                {label}
+            </label>
+            <div className="h-5">
+                {error && <p className="text-[10px] text-red-500 font-bold mt-0.5 ml-4 animate-in fade-in slide-in-from-top-1 duration-200">{error}</p>}
+            </div>
+        </div>
+    );
+};
+
+// --- SUB-COMPONENTE: SELECT (CORREGIDO SOLAPAMIENTO) ---
+const FloatingSelect = ({ label, icon: Icon, value, onChange, options, error, loading = false }: any) => {
+    const hasValue = value !== "" && value !== 0 && value !== undefined;
+
+    return (
+        <div className="relative w-full group">
+            <div className={`absolute left-4 top-[26px] -translate-y-1/2 z-10 text-slate-400 pointer-events-none group-focus-within:text-[#ff8200]`}>
+                {Icon}
+            </div>
+            <select
+                value={value}
+                onChange={onChange}
+                className={`peer w-full bg-slate-50 border-2 ${error ? 'border-red-200' : 'border-slate-100 focus:border-[#ff8200]'} 
+                rounded-2xl pl-12 pr-10 pt-6 pb-2 text-sm font-bold outline-none transition-all appearance-none cursor-pointer`}
+            >
+                <option value="" hidden></option>
+                {!loading && options.map((opt: any) => (
+                    <option key={opt.id || opt.value} value={opt.id || opt.value}>{opt.name || opt.label}</option>
+                ))}
+            </select>
+            <label className={`absolute left-12 transition-all pointer-events-none
+                ${(hasValue)
+                    ? 'top-2 text-[10px] font-black uppercase tracking-widest text-[#ff8200]'
+                    : 'top-[18px] text-base text-slate-400 group-focus-within:top-2 group-focus-within:text-[10px] group-focus-within:font-black group-focus-within:uppercase group-focus-within:text-[#ff8200]'}`}>
+                {label}
+            </label>
+            <ChevronDown size={16} className="absolute right-4 top-[26px] -translate-y-1/2 text-slate-400 pointer-events-none" />
+            <div className="h-5">
+                {error && <p className="text-[10px] text-red-500 font-bold mt-0.5 ml-4">{error}</p>}
+            </div>
+        </div>
+    );
+};
+
 const SolicitudModal: React.FC<SolicitudModalProps> = ({ isOpen, onClose, onFinish }) => {
-    const [dni, setDni] = useState('');
-    const [tramite, setTramite] = useState('');
-    const [confirmTramite, setConfirmTramite] = useState('');
-    const [genero, setGenero] = useState('');
-    const [errors, setErrors] = useState<Record<string, boolean>>({});
+    const [form, setForm] = useState({
+        firstName: '', lastName: '', dni: '', tramite: '', confirmTramite: '',
+        email: '', genero: '', departmentId: 0, educationLevelId: 0,
+        schoolId: 0, schoolNameOther: '', courseGrade: '', courseDivision: '', shiftId: 0
+    });
 
-    if (!isOpen) return null;
+    // Opciones para Grado (1-6)
+    const gradeOptions = [
+        { value: '1', label: '1° Año/Grado' },
+        { value: '2', label: '2° Año/Grado' },
+        { value: '3', label: '3° Año/Grado' },
+        { value: '4', label: '4° Año/Grado' },
+        { value: '5', label: '5° Año/Grado' },
+        { value: '6', label: '6° Año/Grado' },
+    ];
 
-    const validarPaso1 = () => {
-        const newErrors: Record<string, boolean> = {};
+    // Opciones para División (A/1 - I/9)
+    const divisionOptions = [
+        { value: 'A', label: 'A / 1' },
+        { value: 'B', label: 'B / 2' },
+        { value: 'C', label: 'C / 3' },
+        { value: 'D', label: 'D / 4' },
+        { value: 'E', label: 'E / 5' },
+        { value: 'F', label: 'F / 6' },
+        { value: 'G', label: 'G / 7' },
+        { value: 'H', label: 'H / 8' },
+        { value: 'I', label: 'I / 9' },
+    ];
 
-        if (!/^\d{7,8}$/.test(dni)) newErrors.dni = true;
-        if (!/^\d{11}$/.test(tramite)) newErrors.tramite = true;
-        if (confirmTramite !== tramite || confirmTramite === "") newErrors.confirm = true;
-        if (genero === "") newErrors.genero = true;
+    const [schoolSearch, setSchoolSearch] = useState('');
+    const [showSchoolResults, setShowSchoolResults] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [errors, setErrors] = useState<Record<string, string>>({});
 
-        setErrors(newErrors);
-        return Object.keys(newErrors).length === 0;
+    // Captcha states
+    const [captcha, setCaptcha] = useState({ a: 0, b: 0 });
+    const [captchaAnswer, setCaptchaAnswer] = useState('');
+
+    const generateRandomCaptcha = () => {
+        const a = Math.floor(Math.random() * 10) + 1;
+        const b = Math.floor(Math.random() * 10) + 1;
+        setCaptcha({ a, b });
+        setCaptchaAnswer('');
     };
 
-    const handleFinalizar = () => {
-        if (validarPaso1()) {
+    const { data: departments = [], isLoading: loadingDepts } = useQuery({
+        queryKey: ['public-departments'],
+        queryFn: masterDataService.getDepartments,
+        enabled: isOpen
+    });
+
+    const { data: schools = [] } = useQuery({
+        queryKey: ['public-schools'],
+        queryFn: masterDataService.getSchools,
+        enabled: isOpen
+    });
+
+    const { data: educationLevels = [] } = useQuery({
+        queryKey: ['public-education-levels'],
+        queryFn: masterDataService.getEducationLevels,
+        enabled: isOpen
+    });
+
+    const filteredSchools = useMemo(() => {
+        const query = schoolSearch.toLowerCase().trim();
+        if (query.length < 3) return [];
+        return schools.filter(s => s.name.toLowerCase().includes(query)).slice(0, 10);
+    }, [schoolSearch, schools]);
+
+    useEffect(() => {
+        if (isOpen) {
+            setErrors({});
+            setSchoolSearch('');
+            generateRandomCaptcha();
+        }
+    }, [isOpen]);
+
+    const updateField = (field: string, value: any) => {
+        setForm(prev => ({ ...prev, [field]: value }));
+        if (errors[field]) setErrors(prev => ({ ...prev, [field]: '' }));
+    };
+
+    const validar = () => {
+        const e: Record<string, string> = {};
+        if (!form.firstName.trim()) e.firstName = "Obligatorio";
+        if (!form.lastName.trim()) e.lastName = "Obligatorio";
+        if (!/^\d{7,8}$/.test(form.dni)) e.dni = "DNI inválido";
+        if (!form.tramite) e.tramite = "Obligatorio";
+        if (form.confirmTramite !== form.tramite) e.confirmTramite = "No coinciden";
+        if (!form.email.includes('@')) e.email = "Email inválido";
+        if (!form.genero) e.genero = "Obligatorio";
+        if (form.departmentId === 0) e.departmentId = "Obligatorio";
+        if (form.educationLevelId === 0) e.educationLevelId = "Obligatorio";
+        if (form.schoolId === 0 && !form.schoolNameOther.trim()) e.school = "Obligatorio";
+        if (!form.courseDivision) e.courseDivision = "Seleccione";
+
+        // Validar Captcha
+        if (!captchaAnswer) {
+            e.captcha = "Respuesta incompleta";
+        } else if (Number(captchaAnswer) !== (captcha.a + captcha.b)) {
+            e.captcha = "Respuesta incorrecta";
+        }
+
+        setErrors(e);
+        return Object.keys(e).length === 0;
+    };
+
+    const handleFinalizar = async () => {
+        if (!validar()) return;
+        setIsSubmitting(true);
+        try {
+            const payload: PublicEnrollmentRequest = {
+                firstName: form.firstName,
+                lastName: form.lastName,
+                dni: form.dni,
+                dniTramite: form.tramite,
+                gender: form.genero,
+                email: form.email,
+                departmentId: form.departmentId,
+                educationLevelId: form.educationLevelId,
+                schoolId: form.schoolId,
+                schoolNameOther: form.schoolId === -1 ? form.schoolNameOther : undefined,
+                courseGrade: form.courseGrade,
+                courseDivision: form.courseDivision,
+                shiftId: form.shiftId,
+            };
+
+            await enrollmentService.submitPublicFoodRation(payload);
             onFinish();
+        } catch (error) {
+            alert("Error al enviar la solicitud.");
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
+    if (!isOpen) return null;
+
     return (
-        <div className="modal-bg fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto" style={{ backgroundColor: 'rgba(0, 0, 0, 0.7)', backdropFilter: 'blur(4px)' }}>
-            <div className="bg-white rounded-xl w-full max-w-2xl my-8 overflow-hidden shadow-2xl animate-fade-in relative">
-                <div className="bg-[#413f41] text-white p-4 flex justify-between items-center">
-                    <h2 className="font-bold text-lg">Formulario de Solicitud</h2>
-                    <button onClick={onClose} className="text-2xl hover:text-gray-300">&times;</button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm overflow-y-auto">
+            <div className="bg-white rounded-3xl w-full max-w-2xl my-auto overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200">
+
+                {/* Header */}
+                <div className="bg-[#2d2f33] text-white p-6 flex justify-between items-center border-b-4 border-[#ff8200]">
+                    <div>
+                        <h2 className="font-black uppercase tracking-tighter text-xl leading-none">Solicitud de Comedor</h2>
+                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Inscripción Ciclo Lectivo</p>
+                    </div>
+                    <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full transition-colors"><X /></button>
                 </div>
 
-                <div className="p-6 md:p-10 max-h-[80vh] overflow-y-auto">
-                    <div className="space-y-6">
-                        <div className="flex items-center gap-2 text-[#ff8200] border-b-2 border-orange-100 pb-2">
-                            <User size={20} className="font-bold" />
-                            <h3 className="font-black uppercase tracking-tight text-lg">Datos Personales</h3>
+                <div className="p-6 md:p-8 max-h-[80vh] overflow-y-auto space-y-6">
+
+                    {/* SECCIÓN 1: DATOS PERSONALES */}
+                    <section>
+                        <div className="flex items-center gap-2 text-[#ff8200] mb-4">
+                            <User size={18} className="stroke-[3px]" />
+                            <h3 className="font-black uppercase text-xs tracking-widest text-slate-700">Datos Personales</h3>
                         </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                            <CustomInput
-                                label="Nombre"
-                                placeholder="Ingrese nombre"
-                                icon={<User size={16} />}
-                            />
-                            <CustomInput
-                                label="Apellido"
-                                placeholder="Ingrese apellido"
-                                icon={<User size={16} />}
-                            />
-
-                            <div className="space-y-1.5">
-                                <label className="block text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Departamento</label>
-                                <div className="relative group">
-                                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#ff8200]">
-                                        <MapPin size={16} />
-                                    </div>
-                                    <select className="w-full bg-slate-50 border-2 border-slate-100 text-slate-900 text-sm rounded-2xl focus:ring-4 focus:ring-orange-100 focus:border-[#ff8200] block pl-11 p-3.5 outline-none transition-all font-bold appearance-none">
-                                        <option>Seleccioná un departamento</option>
-                                        <option>Capital</option>
-                                        <option>Rivadavia</option>
-                                        <option>Santa Lucía</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <CustomInput
-                                label="E-mail del beneficiario"
-                                type="email"
-                                placeholder="ejemplo@email.com"
-                                icon={<Mail size={16} />}
-                            />
-
-                            <CustomInput
-                                label="Número de celular"
-                                className="md:col-span-2"
-                                placeholder="Ej: 2644123456"
-                                icon={<Phone size={16} />}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4">
+                            <FloatingInput label="Nombre" icon={<User size={18} />} value={form.firstName} onChange={(e: any) => updateField('firstName', e.target.value)} error={errors.firstName} />
+                            <FloatingInput label="Apellido" icon={<User size={18} />} value={form.lastName} onChange={(e: any) => updateField('lastName', e.target.value)} error={errors.lastName} />
+                            <FloatingInput label="DNI" icon={<Hash size={18} />} value={form.dni} onChange={(e: any) => updateField('dni', e.target.value.replace(/\D/g, '').slice(0, 8))} error={errors.dni} />
+                            <FloatingSelect
+                                label="Género" icon={<User size={18} />} value={form.genero}
+                                onChange={(e: any) => updateField('genero', e.target.value)}
+                                options={[{ value: 'Masculino', label: 'Masculino' }, { value: 'Femenino', label: 'Femenino' }, { value: 'Otro', label: 'Otro' }]}
+                                error={errors.genero}
                             />
                         </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 bg-slate-50 p-4 rounded-2xl border border-slate-100 mt-2">
+                            <FloatingInput label="N° Trámite DNI" icon={<Hash size={18} />} value={form.tramite} onChange={(e: any) => updateField('tramite', e.target.value.replace(/\D/g, '').slice(0, 11))} error={errors.tramite} />
+                            <FloatingInput label="Confirmar Trámite" icon={<Check size={18} />} value={form.confirmTramite} onChange={(e: any) => updateField('confirmTramite', e.target.value.replace(/\D/g, '').slice(0, 11))} error={errors.confirmTramite} />
+                        </div>
+                    </section>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 border-t border-slate-100 pt-6">
-                            <CustomInput
-                                label="DNI"
-                                value={dni}
-                                onChange={(e) => setDni(e.target.value)}
-                                placeholder="Ingrese DNI sin puntos"
-                                icon={<Hash size={16} />}
-                                className={errors.dni ? 'animate-shake' : ''}
-                            />
-
-                            <CustomInput
-                                label="N° de trámite del DNI"
-                                value={tramite}
-                                onChange={(e) => setTramite(e.target.value)}
-                                placeholder="11 dígitos"
-                                icon={<Hash size={16} />}
-                                className={errors.tramite ? 'animate-shake' : ''}
-                            />
-
-                            <CustomInput
-                                label="Confirmar N° de trámite"
-                                value={confirmTramite}
-                                onChange={(e) => setConfirmTramite(e.target.value)}
-                                placeholder="Reingrese número"
-                                icon={<Hash size={16} />}
-                                className={errors.confirm ? 'animate-shake' : ''}
-                            />
-
-                            <div className="space-y-1.5">
-                                <label className="block text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Género</label>
-                                <select
-                                    value={genero}
-                                    onChange={(e) => setGenero(e.target.value)}
-                                    className={`w-full bg-slate-50 border-2 ${errors.genero ? 'border-red-200' : 'border-slate-100'} text-slate-900 text-sm rounded-2xl focus:ring-4 focus:ring-orange-100 focus:border-[#ff8200] block p-3.5 outline-none transition-all font-bold`}
-                                >
-                                    <option value="">Seleccione una opción</option>
-                                    <option value="Masculino">Masculino</option>
-                                    <option value="Femenino">Femenino</option>
-                                    <option value="No Binario">No Binario</option>
-                                </select>
+                    {/* SECCIÓN 2: CONTACTO */}
+                    <section className="pt-4 border-t border-slate-100">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4">
+                            <FloatingInput label="Email" icon={<Mail size={18} />} value={form.email} onChange={(e: any) => updateField('email', e.target.value)} error={errors.email} />
+                            <div className="md:col-span-2">
+                                <FloatingSelect
+                                    label="Departamento de Residencia" icon={<Hash size={18} />}
+                                    value={form.departmentId} onChange={(e: any) => updateField('departmentId', Number(e.target.value))}
+                                    options={departments} loading={loadingDepts} error={errors.departmentId}
+                                />
                             </div>
                         </div>
+                    </section>
 
-                        <div className="border-t border-slate-100 pt-6">
-                            <div className="flex items-center gap-2 text-[#ff8200] border-b-2 border-orange-100 pb-2 mb-4">
-                                <GraduationCap size={20} className="font-bold" />
-                                <h3 className="font-black uppercase tracking-tight text-lg">Educación</h3>
-                            </div>
+                    {/* SECCIÓN 3: ESCUELA */}
+                    <section className="pt-4 border-t border-slate-100">
+                        <div className="flex items-center gap-2 text-[#ff8200] mb-4">
+                            <GraduationCap size={18} className="stroke-[3px]" />
+                            <h3 className="font-black uppercase text-xs tracking-widest text-slate-700">Información Escolar</h3>
+                        </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                <div className="space-y-1.5">
-                                    <label className="block text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Nivel Educativo</label>
-                                    <select className="w-full bg-slate-50 border-2 border-slate-100 text-slate-900 text-sm rounded-2xl focus:ring-4 focus:ring-orange-100 focus:border-[#ff8200] block p-3.5 outline-none transition-all font-bold">
-                                        <option>Seleccione una opción</option>
-                                        <option>Inicial</option>
-                                        <option>Primario</option>
-                                        <option>Secundario</option>
-                                    </select>
+                        <div className="space-y-2">
+                            <FloatingSelect
+                                label="Nivel Educativo" icon={<GraduationCap size={18} />}
+                                value={form.educationLevelId} onChange={(e: any) => updateField('educationLevelId', Number(e.target.value))}
+                                options={educationLevels} error={errors.educationLevelId}
+                            />
+
+                            {/* SELECTS PARA GRADO, DIVISION Y TURNO */}
+                            <div className="flex flex-col md:flex-row gap-4">
+                                <div className="flex-[2]">
+                                    <FloatingSelect
+                                        label="Grado / Año" icon={<BookOpen size={18} />}
+                                        value={form.courseGrade}
+                                        onChange={(e: any) => updateField('courseGrade', e.target.value)}
+                                        options={gradeOptions}
+                                        error={errors.courseGrade}
+                                    />
                                 </div>
-                                <div className="space-y-1.5">
-                                    <label className="block text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Grado/Año</label>
-                                    <select className="w-full bg-slate-50 border-2 border-slate-100 text-slate-900 text-sm rounded-2xl focus:ring-4 focus:ring-orange-100 focus:border-[#ff8200] block p-3.5 outline-none transition-all font-bold">
-                                        <option>Seleccione una opción</option>
-                                        <option>1°</option>
-                                        <option>2°</option>
-                                        <option>3°</option>
-                                        <option>4°</option>
-                                        <option>5°</option>
-                                        <option>6°</option>
-                                    </select>
+                                <div className="flex-[1.5]">
+                                    <FloatingSelect
+                                        label="División" icon={<Hash size={18} />}
+                                        value={form.courseDivision}
+                                        onChange={(e: any) => updateField('courseDivision', e.target.value)}
+                                        options={divisionOptions}
+                                        error={errors.courseDivision}
+                                    />
                                 </div>
-                                <div className="space-y-1.5">
-                                    <label className="block text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Turno</label>
-                                    <div className="relative group">
-                                        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#ff8200]">
-                                            <Clock size={16} />
-                                        </div>
-                                        <select className="w-full bg-slate-50 border-2 border-slate-100 text-slate-900 text-sm rounded-2xl focus:ring-4 focus:ring-orange-100 focus:border-[#ff8200] block pl-11 p-3.5 outline-none transition-all font-bold appearance-none">
-                                            <option>Seleccione una opción</option>
-                                            <option>Mañana</option>
-                                            <option>Tarde</option>
-                                            <option>Noche</option>
-                                        </select>
-                                    </div>
+                                <div className="flex-[2]">
+                                    <FloatingSelect
+                                        label="Turno" icon={<Clock size={18} />}
+                                        value={form.shiftId} onChange={(e: any) => updateField('shiftId', Number(e.target.value))}
+                                        options={[{ id: 1, name: 'Mañana' }, { id: 2, name: 'Tarde' }, { id: 3, name: 'Noche' }, { id: 4, name: 'Vespertino' }]}
+                                    />
                                 </div>
-                                <CustomInput label="Escuela" placeholder="Buscar escuela..." icon={<School size={16} />} />
                             </div>
                         </div>
 
-                        <div className="bg-slate-50 p-6 rounded-2xl text-center text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] border-2 border-dashed border-slate-100">
-                            Resuelva el captcha para continuar
-                        </div>
+                        <div className="relative mt-4">
+                            <FloatingInput
+                                label="Buscar Escuela (Escriba nombre)" icon={<Search size={18} />}
+                                value={schoolSearch}
+                                onChange={(e: any) => { setSchoolSearch(e.target.value); setShowSchoolResults(true); if (form.schoolId !== 0) updateField('schoolId', 0); }}
+                                error={errors.school}
+                            />
 
-                        <div className="flex justify-center pt-4">
-                            <ActionButton
-                                onClick={handleFinalizar}
-                                className="w-full md:w-auto px-16 py-5 text-sm"
-                                icon={Check}
-                            >
-                                Enviar Solicitud
-                            </ActionButton>
+                            {showSchoolResults && schoolSearch.length > 2 && (
+                                <div className="absolute z-30 w-full mt-[-15px] bg-white border border-slate-200 rounded-2xl shadow-2xl max-h-48 overflow-y-auto p-2">
+                                    {filteredSchools.length > 0 ? (
+                                        filteredSchools.map((s: any) => (
+                                            <button key={s.id} type="button" onClick={() => { updateField('schoolId', s.id); setSchoolSearch(s.name); setShowSchoolResults(false); }} className="w-full text-left p-3 hover:bg-orange-50 rounded-xl flex items-center gap-3 transition-colors group">
+                                                <School size={16} className="text-slate-400 group-hover:text-[#ff8200]" />
+                                                <span className="text-sm font-bold text-slate-700">{s.name}</span>
+                                            </button>
+                                        ))
+                                    ) : (
+                                        <div className="p-3 text-xs text-slate-400 italic">No se encontraron escuelas...</div>
+                                    )}
+                                    <button type="button" onClick={() => { updateField('schoolId', -1); setShowSchoolResults(false); }} className="w-full text-left p-3 hover:bg-blue-50 rounded-xl flex items-center gap-3 text-blue-600 border-t border-slate-100 mt-1">
+                                        <X size={14} className="bg-blue-100 rounded-full p-0.5" />
+                                        <span className="text-xs font-black uppercase tracking-widest">No está en la lista / Especificar</span>
+                                    </button>
+                                </div>
+                            )}
+
+                            {form.schoolId === -1 && (
+                                <div className="mt-2 animate-in slide-in-from-top-2">
+                                    <FloatingInput label="Nombre de la Escuela" icon={<School size={18} />} value={form.schoolNameOther} onChange={(e: any) => updateField('schoolNameOther', e.target.value)} />
+                                </div>
+                            )}
+                        </div>
+                    </section>
+
+                    {/* CAPTCHA Y BOTÓN */}
+                    <div className="bg-orange-50 p-5 rounded-3xl border-2 border-orange-100 flex flex-col md:flex-row items-center gap-4">
+                        <div className="flex-1 text-center md:text-left">
+                            <p className="text-[10px] font-black text-orange-400 uppercase tracking-widest">Seguridad</p>
+                            <p className="text-lg font-black text-slate-700">¿Cuánto es <span className="text-[#ff8200]">{captcha.a} + {captcha.b}</span>?</p>
+                        </div>
+                        <div className="w-full md:w-32">
+                            <FloatingInput label="Resultado" value={captchaAnswer} onChange={(e: any) => setCaptchaAnswer(e.target.value.replace(/\D/g, ''))} error={errors.captcha} />
                         </div>
                     </div>
-                </div>
 
-                <div className="bg-slate-50 p-6 flex justify-end border-t border-slate-100">
-                    <button onClick={onClose} className="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-600 transition-colors">Cerrar Formulario</button>
+                    <ActionButton
+                        onClick={handleFinalizar}
+                        className="w-full py-6 text-base shadow-xl"
+                        icon={isSubmitting ? Loader2 : Check}
+                        disabled={isSubmitting}
+                    >
+                        {isSubmitting ? 'Procesando...' : 'Confirmar Inscripción'}
+                    </ActionButton>
                 </div>
             </div>
         </div>

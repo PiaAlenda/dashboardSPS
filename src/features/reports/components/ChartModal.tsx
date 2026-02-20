@@ -35,7 +35,7 @@ export const ChartModal = ({ isOpen, onClose, title, children, data }: ChartModa
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-slate-50/30">
-                    <div className="w-full h-[40vh] min-h-[300px] max-h-[500px] flex items-center justify-center bg-white rounded-3xl border border-slate-100 shadow-sm p-4 relative">
+                    <div className="w-full h-[50vh] min-h-[400px] flex items-center justify-center bg-white rounded-3xl border border-slate-100 shadow-sm p-6 relative overflow-hidden">
                         {children}
                     </div>
 

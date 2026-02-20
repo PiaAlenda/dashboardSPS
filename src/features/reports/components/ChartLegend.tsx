@@ -17,9 +17,9 @@ export const ChartLegend: React.FC<ChartLegendProps> = ({ data }) => {
                             className="w-3 h-3 rounded-full shadow-sm transition-transform group-hover:scale-125"
                             style={{ backgroundColor: item.color }}
                         />
-                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
+                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tight flex items-center gap-1.5 whitespace-nowrap">
                             {item.name.replace('_', ' ')}
-                            <span className="text-slate-900 bg-slate-100 px-1.5 py-0.5 rounded-md">
+                            <span className="text-slate-900 bg-slate-100 px-1.5 py-0.5 rounded-md font-black">
                                 {percentage}%
                             </span>
                         </span>

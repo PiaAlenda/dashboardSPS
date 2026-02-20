@@ -97,7 +97,7 @@ export const LoginForm = () => {
                     type="submit"
                     disabled={loading}
                     isLoading={loading}
-                    className="w-full py-4 text-sm bg-black hover:bg-zinc-900 text-white border-none rounded-2xl transition-all font-black shadow-xl active:scale-[0.98]"
+                    className="w-full py-4 text-sm bg-[#0f172a] hover:bg-zinc-900 text-white border-none rounded-2xl transition-all font-black shadow-xl active:scale-[0.98]"
                     icon={ExternalLink}
                 >
                     {loading ? 'Verificando...' : 'Entrar al Sistema'}

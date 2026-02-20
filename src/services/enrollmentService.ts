@@ -53,5 +53,8 @@ export const enrollmentService = {
             params: { startDate, endDate, status },
             responseType: 'blob'
         }).then(res => res.data);
-    }
+    },
+
+    submitPublicFoodRation: (data: any) =>
+        api.post('public/enrollment/food-ration', data).then(res => res.data),
 };

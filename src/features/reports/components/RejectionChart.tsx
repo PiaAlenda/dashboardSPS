@@ -56,7 +56,11 @@ export const RejectionChart = ({ type = 'bar', data }: RejectionChartProps) => {
                 </div>
             ) : (
                 <ResponsiveContainer width="100%" height={240}>
-                    <BarChart data={data} layout="vertical" margin={{ left: 10, right: 30 }}>
+                    <BarChart
+                        data={data}
+                        layout="vertical"
+                        margin={{ left: 30, right: 40, top: 0, bottom: 0 }}
+                    >
                         <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
                         <XAxis type="number" hide />
                         <YAxis
@@ -64,8 +68,8 @@ export const RejectionChart = ({ type = 'bar', data }: RejectionChartProps) => {
                             type="category"
                             axisLine={false}
                             tickLine={false}
-                            width={100}
-                            tick={{ fill: '#94a3b8', fontSize: 8, fontWeight: 'bold' }}
+                            width={140}
+                            tick={{ fill: '#64748b', fontSize: 9, fontWeight: '800' }}
                         />
                         <Tooltip
                             cursor={{ fill: '#f8fafc' }}

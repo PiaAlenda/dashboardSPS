@@ -10,7 +10,7 @@ import { UsersPage } from './pages/UsersPage';
 import { ClaimsPage } from './pages/ClaimsPage';
 import { ReportsPage } from './pages/ReportsPage';
 import { ProfilePage } from './pages/ProfilePage';
-import FormPage from './pages/FormPage'; 
+import FormPage from './pages/FormPage';
 
 const queryClient = new QueryClient();
 
@@ -25,7 +25,7 @@ function App() {
             <Route path="/auth/x82b9" element={<LoginPage />} />
 
             {/* 2. Ruta del Formulario (Pública) */}
-            <Route path="/FormPage" element={<FormPage />} />
+            <Route path="/inscripcion-publica/4a12b6" element={<FormPage />} />
 
             {/* Rutas Protegidas (Panel de Control) */}
             <Route
