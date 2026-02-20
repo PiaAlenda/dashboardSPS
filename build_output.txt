@@ -1,0 +1,13 @@
+﻿
+> web-papa@0.0.0 build C:\Users\piaal\Downloads\dashboardSTT-main
+> tsc -b && vite build
+
+[36mvite v7.3.1 [32mbuilding client environment for production...[36m[39m
+transforming...
+[32mÔ£ô[39m 2393 modules transformed.
+rendering chunks...
+computing gzip size...
+[2mdist/[22m[32mindex.html                 [39m[1m[2m  0.49 kB[22m[1m[22m[2m Ôöé gzip:   0.31 kB[22m
+[2mdist/[22m[35massets/index-DRUEinkl.css  [39m[1m[2m 61.14 kB[22m[1m[22m[2m Ôöé gzip:  10.10 kB[22m
+[2mdist/[22m[36massets/index-C9enkIlK.js   [39m[1m[33m806.82 kB[39m[22m[2m Ôöé gzip: 241.62 kB[22m
+[32mÔ£ô built in 7.66s[39m
